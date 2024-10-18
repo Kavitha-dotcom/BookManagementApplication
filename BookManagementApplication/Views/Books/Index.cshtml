@@ -1,0 +1,61 @@
+﻿@model Dictionary<string, List<BookViewModel>>
+
+@{
+    ViewBag.Title = "Owners and Books";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Books</title>
+    <link rel="stylesheet" href="~/css/styles.css">
+
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>@ViewBag.Title</h1>
+        </header>
+        <nav>
+            <button id="getBooks">Get Books</button>
+            <button id="hardcoverOnly">Hardcover Only</button>
+        </nav>
+        <main>
+            @if (Model == null || !Model.Any())
+            {
+                <p>No books available.</p>
+            }
+            else
+            {
+                @foreach (var category in Model)
+                {
+                    <h3>@category.Key</h3>
+                    <ul>
+                        @foreach (var book in category.Value)
+                        {
+                            <li>@book.Name</li>
+                        }
+                    </ul>
+                }
+            }
+        </main>
+        <footer>
+            <p>&copy; 2024 Your Company</p>
+        </footer>
+    </div>
+
+    @section Scripts {
+        <script>
+            document.getElementById("getBooks").addEventListener("click", function () {
+                window.location.href = '@Url.Action("Index", "Books")';
+            });
+
+            document.getElementById("hardcoverOnly").addEventListener("click", function () {
+                window.location.href = '@Url.Action("HardcoverOnly", "Books")';
+            });
+        </script>
+    }
+</body>
+</html>
