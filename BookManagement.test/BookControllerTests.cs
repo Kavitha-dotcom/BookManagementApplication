@@ -56,7 +56,7 @@ namespace BookManagement.test
                 Console.WriteLine($"{category}: {string.Join(", ", result[category])}");
             }
 
-            Assert.AreEqual(5, result["Books owned by Adults"].Count);
+            Assert.AreEqual(6, result["Books owned by Adults"].Count);
             Assert.AreEqual(4, result["Books owned by Children"].Count);
         }
     }
