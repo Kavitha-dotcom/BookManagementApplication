@@ -7,57 +7,76 @@ using System.Threading.Tasks;
 using Moq;
 using BookManagement.test.Model;
 using BookManagement.test.Service;
+using Newtonsoft.Json;
+using Moq.Protected;
 
 
-namespace BookManagement.test
+[TestClass]
+public class BookControllerTests
 {
-    [TestClass]
-    public class BookControllerTests
+    private BookService _bookService;
+    private List<Owner> _owners;
+    private Mock<HttpMessageHandler> _httpMessageHandlerMock;
+
+    [TestInitialize]
+    public async Task Setup()
     {
-        private BookService _bookService;
-        private List<Owner> _owners;
-
-        [TestInitialize]
-        public void Setup()
+        _bookService = new BookService(new HttpClient());
+        _owners = await _bookService.GetOwnersAsync();
+        if (_owners == null)
         {
-            _bookService = new BookService(new HttpClient());
-            _owners = new List<Owner>
-        {
-            new Owner { Name = "Jane", Age = 23, Books = new List<Book> { new Book { Name = "Hamlet", Type = "Hardcover" }, new Book { Name = "Wuthering Heights", Type = "Paperback" } } },
-            new Owner { Name = "Charlotte", Age = 14, Books = new List<Book> { new Book { Name = "Hamlet", Type = "Paperback" } } },
-            new Owner { Name = "Max", Age = 25, Books = new List<Book> { new Book { Name = "React: The Ultimate Guide", Type = "Hardcover" }, new Book { Name = "Gulliver's Travels", Type = "Hardcover" }, new Book { Name = "Jane Eyre", Type = "Paperback" }, new Book { Name = "Great Expectations", Type = "Hardcover" } } },
-            new Owner { Name = "William", Age = 15, Books = new List<Book> { new Book { Name = "Great Expectations", Type = "Hardcover" } } },
-            new Owner { Name = "Charles", Age = 17, Books = new List<Book> { new Book { Name = "Little Red Riding Hood", Type = "Hardcover" }, new Book { Name = "The Hobbit", Type = "Ebook" } } }
-        };
+            _owners = new List<Owner>();
         }
+    }
 
-        [TestMethod]
-        public void GetBooksByCategory_HardcoverOnly_ShouldFilterAndSortBooks()
-        {
-            var result = _bookService.GetBooksByCategory(_owners, true);
-
-            // Debugging: Print the result
-            foreach (var category in result.Keys)
+    [TestMethod]
+    public async Task GetOwnersAsync_ShouldReturnEmptyList_OnBadRequest()
+    {
+        // Mock a 400 Bad Request response
+        _httpMessageHandlerMock.Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>()
+            )
+            .ReturnsAsync(new HttpResponseMessage
             {
-                Console.WriteLine($"{category}: {string.Join(", ", result[category])}");
-            }
+                StatusCode = HttpStatusCode.BadRequest
+            });
 
-            Assert.AreEqual(4, result["Books owned by Adults"].Count);
-            Assert.AreEqual(2, result["Books owned by Children"].Count);
-        }
-        [TestMethod]
-        public void GetBooksByCategory_ShouldGroupAndSortBooks()
+        var result = await _bookService.GetOwnersAsync();
+
+        Assert.IsNotNull(result);
+        Assert.AreEqual(0, result.Count);
+    }
+
+    [TestMethod]
+    public void GetBooksByCategory_HardcoverOnly_ShouldFilterAndSortBooks()
+    {
+        var result = _bookService.GetBooksByCategory(_owners, true);
+
+        // Debugging: Print the result
+        foreach (var category in result.Keys)
         {
-            var result = _bookService.GetBooksByCategory(_owners);
-
-            // Debugging: Print the result
-            foreach (var category in result.Keys)
-            {
-                Console.WriteLine($"{category}: {string.Join(", ", result[category])}");
-            }
-
-            Assert.AreEqual(6, result["Books owned by Adults"].Count);
-            Assert.AreEqual(4, result["Books owned by Children"].Count);
+            Console.WriteLine($"{category}: {string.Join(", ", result[category])}");
         }
+
+        Assert.AreEqual(4, result["Books owned by Adults"].Count);
+        Assert.AreEqual(2, result["Books owned by Children"].Count);
+    }
+
+    [TestMethod]
+    public void GetBooksByCategory_ShouldGroupAndSortBooks()
+    {
+        var result = _bookService.GetBooksByCategory(_owners);
+
+        // Debugging: Print the result
+        foreach (var category in result.Keys)
+        {
+            Console.WriteLine($"{category}: {string.Join(", ", result[category])}");
+        }
+
+        Assert.AreEqual(6, result["Books owned by Adults"].Count);
+        Assert.AreEqual(4, result["Books owned by Children"].Count);
     }
 }
